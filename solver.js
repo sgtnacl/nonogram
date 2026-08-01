@@ -38,12 +38,42 @@ function getLineClue(line) {
   return clue.length ? clue : emptyLineClue();
 }
 
-function randomGrid(size, density) {
+function randomGridFine(size, density) {
   const grid = [];
   for (let r = 0; r < size; r++) {
     const row = [];
     for (let c = 0; c < size; c++) {
       row.push(Math.random() < density);
+    }
+    grid.push(row);
+  }
+  return grid;
+}
+
+/**
+ * Independent per-cell noise gives every row/column roughly
+ * length * density * (1 - density) separate runs on average - fine for a
+ * 5x5 or 10x10 board, but for 15/20 that's easily 6-8+ groups per line,
+ * which is exactly what made clue lists unreadable (see
+ * MAX_GROUPS_PER_LINE below). Generating a coarser grid and upscaling each
+ * cell into a block halves the *linear* dimension the runs are computed
+ * over, which roughly halves the expected run count for free - a block
+ * boundary can only ever extend an existing run, never start a new one.
+ */
+function randomGrid(size, density) {
+  if (size <= 10) {
+    return randomGridFine(size, density);
+  }
+
+  const block = 2;
+  const coarseSize = Math.ceil(size / block);
+  const coarse = randomGridFine(coarseSize, density);
+
+  const grid = [];
+  for (let r = 0; r < size; r++) {
+    const row = [];
+    for (let c = 0; c < size; c++) {
+      row.push(coarse[Math.floor(r / block)][Math.floor(c / block)]);
     }
     grid.push(row);
   }
@@ -239,6 +269,16 @@ const DENSITY_BY_SIZE = {
   20: 0.58,
 };
 
+// A row/column clue with too many separate blocks ("groups") is what was
+// actually making the clue numbers unreadable - not the grid's separator
+// lines - because every extra group is another number stacked into the
+// same cramped header cell. Cap how many groups any single line may have.
+const MAX_GROUPS_PER_LINE = 4;
+
+function countGroups(clue) {
+  return clue.length === 1 && clue[0] === 0 ? 0 : clue.length;
+}
+
 /**
  * Generates a random, verified-solvable nonogram puzzle of the given size.
  * Tries multiple random grids (a handful of attempts almost always succeeds)
@@ -256,6 +296,11 @@ function generatePuzzle(size, maxAttempts = 500) {
       rowClues.every((c) => c.length === 1 && c[0] === 0) ||
       colClues.every((c) => c.length === 1 && c[0] === 0);
     if (trivial) continue;
+
+    const tooManyGroups =
+      rowClues.some((c) => countGroups(c) > MAX_GROUPS_PER_LINE) ||
+      colClues.some((c) => countGroups(c) > MAX_GROUPS_PER_LINE);
+    if (tooManyGroups) continue;
 
     const { solvable, logicOnly } = checkSolvable(size, rowClues, colClues);
     if (solvable) {
