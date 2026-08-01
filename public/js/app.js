@@ -3,6 +3,9 @@
 (function () {
   const SAVE_KEY = 'nonogram-save-v1';
   const LAST_SIZE_KEY = 'nonogram-last-size';
+  // Thick divider lines are drawn every SECTION_SIZE rows/columns to help
+  // eyeball position on larger boards (like a sudoku box grid).
+  const SECTION_SIZE = 4;
 
   // ---------------------------------------------------------------------
   // State
@@ -211,7 +214,7 @@
     for (let c = 0; c < size; c++) {
       const cell = document.createElement('div');
       cell.className = 'clue-cell clue-col';
-      if ((c + 1) % 5 === 0 && c !== size - 1) cell.classList.add('sep-right');
+      if ((c + 1) % SECTION_SIZE === 0 && c !== size - 1) cell.classList.add('sep-right');
       puzzle.colClues[c].forEach((n) => {
         const span = document.createElement('span');
         span.textContent = n === 0 ? '' : String(n);
@@ -224,7 +227,7 @@
     for (let r = 0; r < size; r++) {
       const rowClueCell = document.createElement('div');
       rowClueCell.className = 'clue-cell clue-row';
-      if ((r + 1) % 5 === 0 && r !== size - 1) rowClueCell.classList.add('sep-bottom');
+      if ((r + 1) % SECTION_SIZE === 0 && r !== size - 1) rowClueCell.classList.add('sep-bottom');
       puzzle.rowClues[r].forEach((n) => {
         const span = document.createElement('span');
         span.textContent = n === 0 ? '' : String(n);
@@ -237,8 +240,8 @@
         cell.className = 'board-cell';
         cell.dataset.r = String(r);
         cell.dataset.c = String(c);
-        if ((c + 1) % 5 === 0 && c !== size - 1) cell.classList.add('sep-right');
-        if ((r + 1) % 5 === 0 && r !== size - 1) cell.classList.add('sep-bottom');
+        if ((c + 1) % SECTION_SIZE === 0 && c !== size - 1) cell.classList.add('sep-right');
+        if ((r + 1) % SECTION_SIZE === 0 && r !== size - 1) cell.classList.add('sep-bottom');
         applyCellClass(cell, board[r][c], mistakeGrid[r][c]);
         boardGrid.appendChild(cell);
       }
