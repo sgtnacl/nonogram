@@ -9,6 +9,7 @@
   // ---------------------------------------------------------------------
   let puzzle = null; // { id, size, rowClues, colClues, solution, lives, logicOnly }
   let board = null; // size x size array of 'empty' | 'fill' | 'x' | 'ghost'
+  let mistakeGrid = null; // size x size array of bool - true where the 'x' was caused by a wrong Fill guess (rendered red instead of grey)
   let livesRemaining = 0;
   let currentTool = 'fill';
   let gameActive = false;
@@ -97,6 +98,10 @@
     return Array.from({ length: size }, () => new Array(size).fill('empty'));
   }
 
+  function makeMistakeGrid(size) {
+    return Array.from({ length: size }, () => new Array(size).fill(false));
+  }
+
   async function startNewGame(size) {
     setLoading(true);
     homeStatus.textContent = '';
@@ -104,6 +109,7 @@
       const data = await fetchPuzzle(size);
       puzzle = data;
       board = makeBlankBoard(size);
+      mistakeGrid = makeMistakeGrid(size);
       livesRemaining = data.lives;
       localStorage.setItem(LAST_SIZE_KEY, String(size));
       enterGameScreen();
@@ -127,6 +133,7 @@
   function restartCurrentPuzzle() {
     if (!puzzle) return;
     board = makeBlankBoard(puzzle.size);
+    mistakeGrid = makeMistakeGrid(puzzle.size);
     livesRemaining = puzzle.lives;
     gameActive = true;
     renderBoard();
@@ -138,7 +145,7 @@
   // ---------------------------------------------------------------------
   function saveGame() {
     if (!puzzle) return;
-    const payload = { puzzle, board, livesRemaining };
+    const payload = { puzzle, board, mistakeGrid, livesRemaining };
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
       flashStatusOnGame('Puzzle saved.');
@@ -157,6 +164,7 @@
       const payload = JSON.parse(raw);
       puzzle = payload.puzzle;
       board = payload.board;
+      mistakeGrid = payload.mistakeGrid || makeMistakeGrid(puzzle.size);
       livesRemaining = payload.livesRemaining;
       gameActive = livesRemaining > 0;
       enterGameScreen();
@@ -231,7 +239,7 @@
         cell.dataset.c = String(c);
         if ((c + 1) % 5 === 0 && c !== size - 1) cell.classList.add('sep-right');
         if ((r + 1) % 5 === 0 && r !== size - 1) cell.classList.add('sep-bottom');
-        applyCellClass(cell, board[r][c]);
+        applyCellClass(cell, board[r][c], mistakeGrid[r][c]);
         boardGrid.appendChild(cell);
       }
     }
@@ -239,29 +247,33 @@
     applySizing(size, maxRowClueCount, maxColClueCount);
   }
 
-  function applyCellClass(cellEl, state) {
-    cellEl.classList.remove('fill', 'x', 'ghost');
+  function applyCellClass(cellEl, state, isMistake) {
+    cellEl.classList.remove('fill', 'x', 'ghost', 'x-wrong');
     if (state === 'fill') cellEl.classList.add('fill');
-    else if (state === 'x') cellEl.classList.add('x');
-    else if (state === 'ghost') cellEl.classList.add('ghost');
+    else if (state === 'x') {
+      cellEl.classList.add('x');
+      if (isMistake) cellEl.classList.add('x-wrong');
+    } else if (state === 'ghost') cellEl.classList.add('ghost');
   }
 
   function updateCellVisual(r, c) {
     const cellEl = boardGrid.querySelector(`.board-cell[data-r="${r}"][data-c="${c}"]`);
-    if (cellEl) applyCellClass(cellEl, board[r][c]);
+    if (cellEl) applyCellClass(cellEl, board[r][c], mistakeGrid[r][c]);
     return cellEl;
   }
 
   function applySizing(size, maxRowClueCount, maxColClueCount) {
     const availW = boardWrapper.clientWidth - 16;
     const availH = boardWrapper.clientHeight - 16;
-    const clueColFactor = 1.7;
-    const clueRowFactor = 1.7;
+    const clueColFactor = 1.8;
+    // Column clue headers stack their numbers vertically, so they need
+    // noticeably more headroom than the row-clue column to stay legible.
+    const clueRowFactor = 2.2;
 
     const cellFromW = availW / (size + clueColFactor);
     const cellFromH = availH / (size + clueRowFactor);
     let cell = Math.floor(Math.min(cellFromW, cellFromH));
-    cell = Math.max(14, Math.min(cell, 46));
+    cell = Math.max(15, Math.min(cell, 46));
 
     const clueW = Math.round(cell * clueColFactor);
     const clueH = Math.round(cell * clueRowFactor);
@@ -270,9 +282,9 @@
     boardGrid.style.setProperty('--clue-w', `${clueW}px`);
     boardGrid.style.setProperty('--clue-h', `${clueH}px`);
 
-    const rowFont = Math.max(8, Math.min(14, Math.floor(cell * 0.5)));
-    const colFontByCount = Math.floor(((clueH - 6) / Math.max(1, maxColClueCount)) * 0.8);
-    const colFont = Math.max(7, Math.min(14, colFontByCount));
+    const rowFont = Math.max(9, Math.min(15, Math.floor(cell * 0.52)));
+    const colFontByCount = Math.floor(((clueH - 4) / Math.max(1, maxColClueCount)) * 0.88);
+    const colFont = Math.max(8, Math.min(15, colFontByCount));
     boardGrid.style.setProperty('--row-clue-font', `${rowFont}px`);
     boardGrid.style.setProperty('--col-clue-font', `${colFont}px`);
   }
@@ -314,6 +326,8 @@
       } else if (current === 'empty' || current === (tool === 'x' ? 'ghost' : 'x')) {
         board[r][c] = tool;
       }
+      // A manually-placed mark is a deliberate choice, not a mistake - always grey.
+      mistakeGrid[r][c] = false;
       updateCellVisual(r, c);
       return;
     }
@@ -340,6 +354,7 @@
 
     // Mistake: placing a real square where the solution says empty.
     board[r][c] = 'x';
+    mistakeGrid[r][c] = true;
     const cellEl = updateCellVisual(r, c);
     if (cellEl) {
       cellEl.classList.remove('mistake');

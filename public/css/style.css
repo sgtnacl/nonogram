@@ -5,10 +5,13 @@
   --accent-light: #818cf8;
   --fill: #1e1b4b;
   --ghost-border: #f59e0b;
-  --x-color: #f87171;
+  --x-color: #9ca3af;
+  --x-mistake-color: #f87171;
   --text: #e0e7ff;
   --text-dim: #a5b4fc;
+  --clue-color: #d7ddfd;
   --grid-line: #3f3b8c;
+  --sep-color: #6a63ad;
   --danger: #ef4444;
   --success: #22c55e;
   color-scheme: dark;
@@ -231,7 +234,8 @@ body {
 .clue-cell {
   background: var(--panel);
   display: flex;
-  color: var(--text-dim);
+  color: var(--clue-color);
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   overflow: hidden;
 }
@@ -249,7 +253,8 @@ body {
   align-items: center;
   justify-content: flex-end;
   padding-bottom: 4px;
-  line-height: 1.05;
+  gap: 0.12em;
+  line-height: 1.15;
 }
 
 .board-cell {
@@ -257,12 +262,22 @@ body {
   position: relative;
 }
 
-/* thicker separators every 5 cells, like standard nonogram grids */
+/*
+ * Thicker separators every 5 cells, like standard nonogram grids. Cells at
+ * the intersection of a sep-right column and a sep-bottom row need BOTH
+ * shadows in one rule - box-shadow isn't additive across separate rules, so
+ * without the combined selector below, whichever rule matched last would
+ * silently replace the other and the line would appear to cut off right at
+ * that row/column.
+ */
 .board-cell.sep-right, .clue-cell.sep-right {
-  box-shadow: inset -2px 0 0 var(--accent-light);
+  box-shadow: inset -1.5px 0 0 var(--sep-color);
 }
 .board-cell.sep-bottom, .clue-cell.sep-bottom {
-  box-shadow: inset 0 -2px 0 var(--accent-light);
+  box-shadow: inset 0 -1.5px 0 var(--sep-color);
+}
+.board-cell.sep-right.sep-bottom, .clue-cell.sep-right.sep-bottom {
+  box-shadow: inset -1.5px 0 0 var(--sep-color), inset 0 -1.5px 0 var(--sep-color);
 }
 
 .board-cell.fill {
@@ -291,6 +306,14 @@ body {
 }
 .board-cell.x::before { transform: translateX(-50%) rotate(45deg); }
 .board-cell.x::after { transform: translateX(-50%) rotate(-45deg); }
+
+/* X's created by a wrong "Fill" guess (cost a life) are red; every other X
+   - auto-filled once a row/column is solved, or manually placed with the
+   Mark X tool - is grey. */
+.board-cell.x.x-wrong::before,
+.board-cell.x.x-wrong::after {
+  background: var(--x-mistake-color);
+}
 
 .board-cell.ghost {
   box-shadow: inset 0 0 0 2px var(--ghost-border);
