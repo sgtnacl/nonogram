@@ -1,0 +1,13 @@
+{
+  "name": "nonogram",
+  "version": "1.0.0",
+  "description": "Nonogram (Picross) puzzle game with backend-verified randomized levels, installable as a mobile PWA.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "gen-icons": "node scripts/generate-icons.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

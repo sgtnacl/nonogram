@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Nonogram</title>
+<meta name="description" content="Randomized, backend-verified nonogram puzzles." />
+
+<!-- PWA / installability -->
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#4f46e5" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Nonogram" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png" />
+
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ============ HOME SCREEN ============ -->
+<section id="screen-home" class="screen" aria-hidden="false">
+  <div class="home-panel">
+    <h1 class="title">NONOGRAM</h1>
+    <p class="subtitle">Randomized puzzles, verified solvable by the backend before you ever see them.</p>
+
+    <div class="field">
+      <label for="size-select">Puzzle size</label>
+      <select id="size-select">
+        <option value="5">5 &times; 5</option>
+        <option value="10" selected>10 &times; 10</option>
+        <option value="15">15 &times; 15</option>
+        <option value="20">20 &times; 20</option>
+      </select>
+    </div>
+
+    <button id="btn-new-game" class="btn btn-primary btn-block">New Game</button>
+    <button id="btn-load-game" class="btn btn-secondary btn-block">Load Puzzle</button>
+
+    <p id="home-status" class="home-status" role="status"></p>
+  </div>
+</section>
+
+<!-- ============ GAME SCREEN ============ -->
+<section id="screen-game" class="screen hidden" aria-hidden="true">
+  <header class="game-topbar">
+    <button id="btn-home" class="icon-btn" aria-label="Home">&#8592;</button>
+    <div id="lives-display" class="lives-display" aria-live="polite"></div>
+    <button id="btn-save" class="icon-btn" aria-label="Save puzzle">&#128190;</button>
+  </header>
+
+  <div id="board-wrapper" class="board-wrapper">
+    <div id="board-scale" class="board-scale">
+      <div id="board-grid" class="board-grid"></div>
+    </div>
+  </div>
+
+  <footer class="toolbar">
+    <button id="tool-x" class="tool-btn" data-tool="x">
+      <span class="tool-icon">&#10005;</span>
+      <span class="tool-label">Mark X</span>
+    </button>
+    <button id="tool-ghost" class="tool-btn" data-tool="ghost">
+      <span class="tool-icon">&#9634;</span>
+      <span class="tool-label">Ghost</span>
+    </button>
+    <button id="tool-fill" class="tool-btn active" data-tool="fill">
+      <span class="tool-icon">&#9632;</span>
+      <span class="tool-label">Fill</span>
+    </button>
+  </footer>
+</section>
+
+<!-- ============ MODAL (win / lose / info) ============ -->
+<div id="modal-overlay" class="modal-overlay hidden">
+  <div class="modal">
+    <h2 id="modal-title"></h2>
+    <p id="modal-body"></p>
+    <div id="modal-actions" class="modal-actions"></div>
+  </div>
+</div>
+
+<!-- ============ LOADING OVERLAY ============ -->
+<div id="loading-overlay" class="loading-overlay hidden">
+  <div class="spinner"></div>
+  <p>Generating &amp; verifying puzzle&hellip;</p>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
